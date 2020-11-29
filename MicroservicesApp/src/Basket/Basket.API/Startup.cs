@@ -1,18 +1,14 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Basket.API.Data;
 using Basket.API.Data.Interfaces;
 using Basket.API.Repositories;
 using Basket.API.Repositories.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 
 namespace Basket.API
@@ -29,17 +25,31 @@ namespace Basket.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddControllers();
 
-            services.AddSingleton<ConnectionMultiplexer>(sp => {
+            #region Redis Dependencies
+
+            services.AddSingleton<ConnectionMultiplexer>(sp =>
+            {
                 var configuration = ConfigurationOptions.Parse(Configuration.GetConnectionString("Redis"), true);
                 return ConnectionMultiplexer.Connect(configuration);
             });
 
-            services.AddTransient<IBasketContext, BasketContext>();
-            #region DI
-            services.AddTransient<IBasketRepository, BasketRepository>();
             #endregion
-            services.AddControllers();
+
+            services.AddTransient<IBasketContext, BasketContext>();
+            services.AddTransient<IBasketRepository, BasketRepository>();
+
+            #region Swagger Dependencies
+
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("niki", new OpenApiInfo { Title = "Basket API", Version = "niki" });
+            });
+
+            #endregion
+
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -57,6 +67,12 @@ namespace Basket.API
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+            });
+
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/niki/swagger.json", "Basket API NIKI");
             });
         }
     }

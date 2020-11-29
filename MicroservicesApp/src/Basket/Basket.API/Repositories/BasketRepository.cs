@@ -18,7 +18,7 @@ namespace Basket.API.Repositories
         #region Constructor
         public BasketRepository(IBasketContext context)
         {
-            _context = context;
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         #endregion
